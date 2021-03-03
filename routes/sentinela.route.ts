@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import upload from '../helpers/multer';
 
 const router = Router()
@@ -6,14 +6,18 @@ const router = Router()
 import { getSentinelas, getSentinela, crearRecord, uploadFoto } from '../controllers/sentinela.controller'
 
 router.route('/')
-    .get(getSentinelas)
-    .post(crearRecord)
+    .get(express.json(), getSentinelas)
+    .post(express.json(), crearRecord)
 
 router.route('/subir')
-    .post(upload.single('image'), uploadFoto)
-    //.post(uploadFoto)
+    .post(express.raw({
+        inflate: true,
+        limit: "100mb",
+        type: "application/octet-stream"
+    }), uploadFoto)
+//.post(uploadFoto)
 
 router.route('/:id')
-    .get(getSentinela)
+    .get(express.json(), getSentinela)
 
 export default router

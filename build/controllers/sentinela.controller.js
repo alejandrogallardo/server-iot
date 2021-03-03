@@ -16,6 +16,7 @@ exports.uploadFoto = exports.crearRecord = exports.getSentinela = exports.getSen
 const database_1 = require("../database/database");
 const stringbuilder_1 = require("../helpers/stringbuilder");
 const server_1 = __importDefault(require("../server/server"));
+const uuid_1 = require("uuid");
 const fs_1 = __importDefault(require("fs"));
 function getSentinelas(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -323,22 +324,14 @@ function uploadFoto(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const target_dir = 'uploads/';
         const data = req.body;
-        const nomarchOld = 'mifotoAsy';
+        const nomarchOld = uuid_1.v4();
         const fotoCorrel = '5';
         // const { title, description } = req.body;
         // console.log('Titulo: ', title);
         // console.log('Descripcion: ', description);
-        console.log('Data foto: ', data);
-        const buff = new Buffer(data, 'binary');
+        const buff = Buffer.from(data).toString('binary');
         try {
-            // fs.writeFile(target_dir+nomarchOld+fotoCorrel+".jpg", data,(error) => {
-            //     if(error){
-            //         console.log(error);
-            //     }else {
-            //         console.log('Archivo guardado correctamente');
-            //     }
-            // });
-            fs_1.default.writeFileSync(target_dir + nomarchOld + fotoCorrel + ".jpg", buff);
+            fs_1.default.writeFileSync(target_dir + nomarchOld + fotoCorrel + ".jpg", buff, 'binary');
             return res.status(200).json({
                 ok: true
             });
