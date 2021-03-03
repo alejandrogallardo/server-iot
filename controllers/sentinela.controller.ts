@@ -1,10 +1,13 @@
 import { Router, Request, Response } from 'express';
-import {connect}  from '../database/database';
-import {StringBuilder} from '../helpers/stringbuilder';
+import { connect } from '../database/database';
+import { StringBuilder } from '../helpers/stringbuilder';
 import Server from '../server/server';
+
+import { v4 as uuidV4 } from 'uuid';
+
 import fs from 'fs';
 
-export async function getSentinelas(req: Request, res: Response): Promise<Response>{
+export async function getSentinelas(req: Request, res: Response): Promise<Response> {
     const connection = await connect();
     try {
         const datos = await connection.request().query('select * from Sentinelas')
@@ -18,13 +21,13 @@ export async function getSentinelas(req: Request, res: Response): Promise<Respon
             message: error.message
         });
     }
-    finally{
+    finally {
         connection.close();
     }
 
 }
 
-export async function getSentinela(req: Request, res: Response): Promise<Response>{
+export async function getSentinela(req: Request, res: Response): Promise<Response> {
 
     const id = req.params.id
     // console.log(id)
@@ -54,9 +57,9 @@ export async function crearRecord(req: Request, res: Response): Promise<Response
     let org: any = headers.from;
     let nomarchOld = org.substr(0, org.indexOf('|')); // test Device
     let nomarch = nomarchOld; // test Device
-    org = org.substr(org.indexOf('|')+1, org.length);
+    org = org.substr(org.indexOf('|') + 1, org.length);
     let deviceClass = org.substr(0, org.indexOf('|')); // ATM
-    org = org.substr(org.indexOf('|')+1, org.length); // All
+    org = org.substr(org.indexOf('|') + 1, org.length); // All
     let contentName = headers['content-name']; // config/status
     let archsize = headers['content-length']; // 685
 
@@ -81,7 +84,7 @@ export async function crearRecord(req: Request, res: Response): Promise<Response
 
     const connection = await connect();
 
-    try{
+    try {
         if (connection) { // verificar conexion
 
             try {
@@ -99,7 +102,7 @@ export async function crearRecord(req: Request, res: Response): Promise<Response
 
                 } // fin if
 
-            } catch (error){
+            } catch (error) {
                 return res.status(404).json({
                     ok: false,
                     message: error.message
@@ -114,7 +117,7 @@ export async function crearRecord(req: Request, res: Response): Promise<Response
                         tempLen = parseInt(tempStr, 10);
                         nomarch = data.substr(9, tempLen);
                         if (connection) {
-                            try{
+                            try {
                                 SQL = `SELECT * from Notificaciones where Dest = '${nomarchOld}'`;
                                 const resultnoti = await connection.request().query(SQL);
                                 if (resultnoti.rowsAffected[0] != 0) {
@@ -126,7 +129,7 @@ export async function crearRecord(req: Request, res: Response): Promise<Response
                                     SQL = `DELETE from Notificaciones where Dest = '${nomarchOld}'`;
                                     const result = await connection.request().query(SQL);
                                 } // no hay dest
-                            } catch (error){
+                            } catch (error) {
                                 console.log(error)
                             }
 
@@ -173,7 +176,7 @@ export async function crearRecord(req: Request, res: Response): Promise<Response
                                     ok: true,
                                     respuesta: result.output // .recordset
                                 })*/
-                            } catch (error){
+                            } catch (error) {
                                 return res.status(404).json({
                                     ok: false,
                                     message: error.message
@@ -240,12 +243,12 @@ export async function crearRecord(req: Request, res: Response): Promise<Response
                 let algo = target_dir + nomarchOld + fotoCorrel.toString() + ".jpg";
                 console.log('Archivo imagen: ', algo);
                 // file_put_contents(target_dir + nomarchOld + fotoCorrel + ".jpg", data);
-                fs.writeFile(target_dir+nomarchOld+fotoCorrel+".jpg", data, (error) => {
-                     if(error){
-                     console.log(error);
-                      }else {
-                         console.log('Archivo guardado correctamente');
-                     }
+                fs.writeFile(target_dir + nomarchOld + fotoCorrel + ".jpg", data, (error) => {
+                    if (error) {
+                        console.log(error);
+                    } else {
+                        console.log('Archivo guardado correctamente');
+                    }
                 });
 
                 if (connection) {
@@ -255,17 +258,17 @@ export async function crearRecord(req: Request, res: Response): Promise<Response
                         console.log('Query en CAM 1: ', SQL);
                         const result = await connection.request().query(SQL);
                         // sqlsrv_free_stmt($result);
-                    }catch (err){
+                    } catch (err) {
                         console.log(err)
                     }
 
-                    try{
+                    try {
                         SQL = `insert into Notificaciones Values('${nomarchOld}', '${org}', '${nomarchOld}${fotoCorrel}.jpg', getdate() )`;
                         console.log('Query en CAM 2: ', SQL);
                         const result = await connection.request().query(SQL);
                         // sqlsrv_free_stmt($result);
                         // sqlsrv_close($conn);
-                    }catch (err){
+                    } catch (err) {
                         console.log(err)
                     }
 
@@ -289,19 +292,19 @@ export async function crearRecord(req: Request, res: Response): Promise<Response
         console.log('Resultado final antes del res: ', resultado);
 
         return res.format({
-            'text/plain': function (){
+            'text/plain': function () {
                 res.send(resultado)
             }
         })
 
-    // FIN DEL TRY
+        // FIN DEL TRY
     } catch (error) {
         return res.status(400).json({
             ok: false,
             message: error.message
         });
     }
-    finally{
+    finally {
         console.log('Se cerro conexion')
         connection.close();
     }
@@ -312,33 +315,24 @@ export async function crearRecord(req: Request, res: Response): Promise<Response
 export async function uploadFoto(req: Request, res: Response): Promise<Response> {
     const target_dir = 'uploads/';
     const data = req.body;
-    const nomarchOld = 'mifotoAsy';
+    const nomarchOld = uuidV4();
     const fotoCorrel = '5';
 
     // const { title, description } = req.body;
     // console.log('Titulo: ', title);
     // console.log('Descripcion: ', description);
 
-    console.log('Data foto: ', data);
-    const buff = new Buffer(data, 'binary');
+    const buff = Buffer.from(data).toString('binary');
 
-    try{
+    try {
 
-        // fs.writeFile(target_dir+nomarchOld+fotoCorrel+".jpg", data,(error) => {
-        //     if(error){
-        //         console.log(error);
-        //     }else {
-        //         console.log('Archivo guardado correctamente');
-        //     }
-        // });
-
-        fs.writeFileSync(target_dir+nomarchOld+fotoCorrel+".jpg", buff);
+        fs.writeFileSync(target_dir + nomarchOld + fotoCorrel + ".jpg", buff, 'binary');
 
         return res.status(200).json({
             ok: true
         })
 
-    } catch (error){
+    } catch (error) {
 
         return res.status(400).json({
             ok: false,
